@@ -10,7 +10,7 @@ import utils.Parser;
 
 public class BPlusTree {
 
-    static final int NODE_SIZE = Parser.BLOCK_SIZE/(Parser.POINTER_SIZE+Parser.KEY_SIZE);
+    static final int NODE_SIZE = (Parser.BLOCK_SIZE-Parser.POINTER_SIZE)/(Parser.POINTER_SIZE+Parser.KEY_SIZE);
     static Node rootNode;
     Node nodeToInsertTo;
 
@@ -314,55 +314,55 @@ public class BPlusTree {
     private void mergeInternalNodes(InternalNode targetNode, InternalNode sacrificialNode, InternalNode parent,
             int rightPointerIdx,
             int inBetweenKeyIdx, boolean targetNodeInsufficient) {
-    // Use the targetNodeInsufficient flag to determine merge direction
-    if (targetNodeInsufficient) {
-        // Add the in-between key from the parent
-        targetNode.getKeys().add(parent.getKeyAt(inBetweenKeyIdx));
-        
-        // Move keys and children from sacrificialNode to targetNode
-        targetNode.getKeys().addAll(sacrificialNode.getKeys());
-        targetNode.getChildren().addAll(sacrificialNode.getChildren());
-
-    } else {
-        // Add the in-between key from the parent
-        targetNode.getKeys().add(0, parent.getKeyAt(inBetweenKeyIdx));
-
-        // Move keys and children from sacrificialNode to the start of targetNode
-        targetNode.getKeys().addAll(0, sacrificialNode.getKeys());
-        targetNode.getChildren().addAll(0, sacrificialNode.getChildren());
+        // Use the targetNodeInsufficient flag to determine merge direction
+        if (targetNodeInsufficient) {
+            // Add the in-between key from the parent
+            targetNode.getKeys().add(parent.getKeyAt(inBetweenKeyIdx));
+            
+            // Move keys and children from sacrificialNode to targetNode
+            targetNode.getKeys().addAll(sacrificialNode.getKeys());
+            targetNode.getChildren().addAll(sacrificialNode.getChildren());
+    
+        } else {
+            // Add the in-between key from the parent
+            targetNode.getKeys().add(0, parent.getKeyAt(inBetweenKeyIdx));
+    
+            // Move keys and children from sacrificialNode to the start of targetNode
+            targetNode.getKeys().addAll(0, sacrificialNode.getKeys());
+            targetNode.getChildren().addAll(0, sacrificialNode.getChildren());
+        }
+    
+        // Remove the sacrificialNode and the in-between key from the parent
+        parent.getChildren().remove(sacrificialNode);
+        parent.getKeys().remove(inBetweenKeyIdx);
+    
+        sacrificialNode = null;
+    
+        // handling under population of parent not required for this project but ideally we would have it
     }
-
-    // Remove the sacrificialNode and the in-between key from the parent
-    parent.getChildren().remove(sacrificialNode);
-    parent.getKeys().remove(inBetweenKeyIdx);
-
-    sacrificialNode = null;
-
-    // Additional logic might be needed to handle under-population of the parent.
-}
 
     private void mergeLeafNodes(LeafNode targetNode, LeafNode sacrificialNode, InternalNode parent,
             int rightPointerIdx, int inBetweenKeyIdx, boolean targetNodeInsufficient) {
     
-    // Merge keys and address pairs from sacrificialNode to targetNode
-    targetNode.getKeys().addAll(sacrificialNode.getKeys());
-    targetNode.keyAddrMap.putAll(sacrificialNode.keyAddrMap); // Assuming address map
-
-    // Update the sibling pointers
-    if (sacrificialNode.getRightSibling() != null) {
-        sacrificialNode.getRightSibling().setLeftSibling(targetNode);
+        // Merge keys and address pairs from sacrificialNode to targetNode
+        targetNode.getKeys().addAll(sacrificialNode.getKeys());
+        targetNode.keyAddrMap.putAll(sacrificialNode.keyAddrMap); // Assuming address map
+    
+        // Update the sibling pointers
+        if (sacrificialNode.getRightSibling() != null) {
+            sacrificialNode.getRightSibling().setLeftSibling(targetNode);
+        }
+        targetNode.setRightSibling(sacrificialNode.getRightSibling());
+    
+        // Remove the sacrificialNode and its key from the parent
+        parent.getChildren().remove(sacrificialNode);
+        parent.getKeys().remove(inBetweenKeyIdx);
+    
+        sacrificialNode = null;
+    
+    
+        // handling under population of parent not required for this project but ideally we would have it
     }
-    targetNode.setRightSibling(sacrificialNode.getRightSibling());
-
-    // Remove the sacrificialNode and its key from the parent
-    parent.getChildren().remove(sacrificialNode);
-    parent.getKeys().remove(inBetweenKeyIdx);
-
-    sacrificialNode = null;
-
-
-    // Additional logic might be needed to handle under-population of the parent.
-}
 
     private void moveOneKeyLeafNode(LeafNode    donor, LeafNode receiver,
             boolean donorOnLeft, InternalNode parent,
