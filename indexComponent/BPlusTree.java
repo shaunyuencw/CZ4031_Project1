@@ -10,7 +10,7 @@ import utils.Parser;
 
 public class BPlusTree {
 
-    static final int NODE_SIZE = Parser.BLOCK_SIZE/(Parser.POINTER_SIZE+Parser.KEY_SIZE);
+    static final int NODE_SIZE = (Parser.BLOCK_SIZE-Parser.POINTER_SIZE)/(Parser.POINTER_SIZE+Parser.KEY_SIZE);
     static Node rootNode;
     Node nodeToInsertTo;
 
