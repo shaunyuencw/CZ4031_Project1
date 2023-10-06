@@ -314,146 +314,57 @@ public class BPlusTree {
     private void mergeInternalNodes(InternalNode targetNode, InternalNode sacrificialNode, InternalNode parent,
             int rightPointerIdx,
             int inBetweenKeyIdx, boolean targetNodeInsufficient) {
-        Float keyToRemove;
-
-        if (targetNodeInsufficient) {
-            int moveKeyCount = sacrificialNode.getKeyCount();
-            keyToRemove = targetNode.getChild(targetNode.getKeyCount()).getLastKey();
-
-            // move keys and children from siblingNode into back of targetnode
-            for (int i = 0; i < moveKeyCount; i++) {
-                targetNode.getKeys().add(targetNode.getKeyCount(), sacrificialNode.getKeyAt(i));
-            }
-            for (int i = 0; i < sacrificialNode.getChildren().size(); i++) {
-                targetNode.getChildren().add(sacrificialNode.getChild(i));
-            }
-            targetNode.getKeys().add(targetNode.getKeyCount(), targetNode.getChild(targetNode.getKeyCount() + 1).getFirstKey());
-
-            // update parent
-            sacrificialNode.getParent().removeChild(sacrificialNode);
-        } else {
-            int moveKeyCount = sacrificialNode.getKeyCount();
-            keyToRemove = sacrificialNode.getFirstKey();
-
-            // move keys and children from siblingNode into front of targetnode
-            for (int i = 0; i < moveKeyCount; i++) {
-                targetNode.getKeys().add(0, sacrificialNode.getKeyAt(i));
-            }
-            for (int i = 0; i < sacrificialNode.getChildren().size(); i++) {
-                targetNode.getChildren().add(sacrificialNode.getChild(i));
-            }
-            targetNode.getKeys().add(0, targetNode.getChild(1).getFirstKey());
+    // Use the targetNodeInsufficient flag to determine merge direction
+    if (targetNodeInsufficient) {
+        // Add the in-between key from the parent
+        targetNode.getKeys().add(parent.getKeyAt(inBetweenKeyIdx));
         
-            // update parent
-            sacrificialNode.getParent().removeChild(sacrificialNode);
+        // Move keys and children from sacrificialNode to targetNode
+        targetNode.getKeys().addAll(sacrificialNode.getKeys());
+        targetNode.getChildren().addAll(sacrificialNode.getChildren());
 
-        }
+    } else {
+        // Add the in-between key from the parent
+        targetNode.getKeys().add(0, parent.getKeyAt(inBetweenKeyIdx));
 
-        int ptrIdx = targetNode.getIdxOfKey(keyToRemove, true);
-        int keyIdx = ptrIdx - 1;
-
-        // InternalNode LeafNode = (InternalNode) targetNode;
-        Float lowerbound = checkForLowerbound(keyToRemove);
-        Float newLowerBound;
-
-        if (targetNode.getKeyCount() >= (keyIdx + 1)) {
-            newLowerBound = lowerbound;
-        } else {
-            newLowerBound = checkForLowerbound(targetNode.getKeyAtIdx(keyIdx + 1)); // Get new lowerbound
-            parent.updateKeyAt(inBetweenKeyIdx - 1, keyToRemove, false, checkForLowerbound(keyToRemove));
-        }
-        // parent.replaceKeyAt(inBetweenKeyIdx, newLowerBound);
+        // Move keys and children from sacrificialNode to the start of targetNode
+        targetNode.getKeys().addAll(0, sacrificialNode.getKeys());
+        targetNode.getChildren().addAll(0, sacrificialNode.getChildren());
     }
+
+    // Remove the sacrificialNode and the in-between key from the parent
+    parent.getChildren().remove(sacrificialNode);
+    parent.getKeys().remove(inBetweenKeyIdx);
+
+    sacrificialNode = null;
+
+    // Additional logic might be needed to handle under-population of the parent.
+}
 
     private void mergeLeafNodes(LeafNode targetNode, LeafNode sacrificialNode, InternalNode parent,
             int rightPointerIdx, int inBetweenKeyIdx, boolean targetNodeInsufficient) {
-        Float removedKey = 0.0f;
-        int moveKeyCount = sacrificialNode.getKeyCount();
-        int childrenCount = sacrificialNode.getParent().getChildren().size();
-        
-        // move all keys from sacrificialNode to target
-        for (int i = 0; i < moveKeyCount; i++) {
-            removedKey = sacrificialNode.removeKeyAt(0);
-            int targetNodeLastKeyPos = targetNode.getLastIdx();
-            targetNode.insertKeyAt(targetNodeLastKeyPos + 1, removedKey);
-            targetNode.insertKeyAddrArrPair(removedKey, sacrificialNode.getAddressesForKey(removedKey));
-            sacrificialNode.removeKeyInMap(removedKey);
-        }
+    
+    // Merge keys and address pairs from sacrificialNode to targetNode
+    targetNode.getKeys().addAll(sacrificialNode.getKeys());
+    targetNode.keyAddrMap.putAll(sacrificialNode.keyAddrMap); // Assuming address map
 
-        // remove sacrificialNode from parent
-        parent.removeChild(sacrificialNode);
-        // need to update parent if there is a mismatch in child count and key count
-        if ((parent.getChildren().size()) != (parent.getKeyCount())) parent.removeKeyAt(inBetweenKeyIdx);
-
-        if (targetNodeInsufficient) {
-            // update siblings
-            if (sacrificialNode.getRightSibling() != null) {
-                LeafNode sacrificialNodeRightSibling = sacrificialNode.getRightSibling();
-                sacrificialNodeRightSibling.setLeftSibling(sacrificialNode.getLeftSibling());
-            }
-            targetNode.setRightSibling(sacrificialNode.getRightSibling());
-
-            // update the parent of sacrificialNode
-            if (sacrificialNode.getKeyCount() == 0) {
-                InternalNode sacNodeParent = sacrificialNode.getParent();
-                sacNodeParent.removeChild(sacrificialNode);
-                sacNodeParent.removeKeyAt(0);
-            }
-        } else {
-            // update the pointers of both sacNode's siblings
-            if (sacrificialNode.getLeftSibling() != null) {
-                LeafNode sacNodeLeftSibling = sacrificialNode.getLeftSibling();
-                if (sacrificialNode.getRightSibling() != null) {
-                    LeafNode sacNodeRightSibling = sacrificialNode.getRightSibling();
-                    sacNodeLeftSibling.setRightSibling(sacNodeRightSibling);
-                } else sacNodeLeftSibling.setRightSibling(null);
-            }
-
-            if (sacrificialNode.getRightSibling() != null) {
-                LeafNode sacNodeRightSibling = sacrificialNode.getRightSibling();
-                if (sacrificialNode.getLeftSibling() != null) {
-                    LeafNode sacNodeLeftSibling = sacrificialNode.getLeftSibling();
-                    sacNodeRightSibling.setLeftSibling(sacNodeLeftSibling);
-                } else sacNodeRightSibling.setLeftSibling(null);
-            }
-
-            if (sacrificialNode.getKeyCount() == 0) {
-                InternalNode sacNodeParent = sacrificialNode.getParent();
-                sacNodeParent.removeChild(sacrificialNode);
-                if (inBetweenKeyIdx < 0) {
-                    sacNodeParent.removeKeyAt(inBetweenKeyIdx + 1);
-                } else if (sacNodeParent.getKeyCount() > 0) {
-                    sacNodeParent.removeKeyAt(inBetweenKeyIdx);
-                } else {
-                    sacNodeParent.removeKeyAt(0);
-                }
-            } else {
-                InternalNode sacNodeParent = sacrificialNode.getRightSibling().getParent();
-                sacNodeParent.removeChild(sacrificialNode);
-                // Check if parent key satisfy min node size
-                if ((sacNodeParent.getKeyCount() > sacNodeParent.getMinInternalNodeSize())
-                        && (sacNodeParent.getChildren().size() > sacrificialNode.getMinInternalNodeSize())) {
-                    sacNodeParent.removeKeyAt(0);
-
-                }
-            }
-        }
-
-        Float lowerbound = checkForLowerbound(removedKey);
-        Float newLowerBound;
-
-        if (sacrificialNode.getParent().getKeyCount() >= childrenCount) {
-            newLowerBound = lowerbound;
-        } else {
-            newLowerBound = sacrificialNode.getParent().getChild(0).getFirstKey();
-
-            if (inBetweenKeyIdx != 0) {
-                sacrificialNode.getParent().updateKeyAt(inBetweenKeyIdx - 1, newLowerBound, true, newLowerBound);
-            }
-        }
+    // Update the sibling pointers
+    if (sacrificialNode.getRightSibling() != null) {
+        sacrificialNode.getRightSibling().setLeftSibling(targetNode);
     }
+    targetNode.setRightSibling(sacrificialNode.getRightSibling());
 
-    private void moveOneKeyLeafNode(LeafNode donor, LeafNode receiver,
+    // Remove the sacrificialNode and its key from the parent
+    parent.getChildren().remove(sacrificialNode);
+    parent.getKeys().remove(inBetweenKeyIdx);
+
+    sacrificialNode = null;
+
+
+    // Additional logic might be needed to handle under-population of the parent.
+}
+
+    private void moveOneKeyLeafNode(LeafNode    donor, LeafNode receiver,
             boolean donorOnLeft, InternalNode parent,
             int inBetweenKeyIdx) {
         Float key;
