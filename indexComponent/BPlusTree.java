@@ -53,7 +53,7 @@ public class BPlusTree {
                 keys = nodeToInsertTo.getKeys();
                 for (int i = keys.size() - 1; i >= 0; i--) {
 
-                    // node is suitable if there is a key <= key to insert
+                    // pointer - key - pointer - key sequence means we need get the right pointer so + 1
                     if (nodeToInsertTo.getKeyAtIdx(i) <= key) {
                         nodeToInsertTo = ((InternalNode) nodeToInsertTo).getChild(i + 1);
                         break;
@@ -81,7 +81,7 @@ public class BPlusTree {
     // delete node and return addresses to be removed
     public ArrayList<Address> deleteKey(Float key) {
         Float lowerbound = checkForLowerbound(key);
-        return (deleteNode(rootNode, null, -1, -1, key, lowerbound));
+        return (deleteKeyRecursive(rootNode, null, -1, -1, key, lowerbound));
     }
 
     // handles an invalid node type (wrapper function)
@@ -104,7 +104,6 @@ public class BPlusTree {
         }
     }
 
-    // GETTERS AND SETTERS + misc / helpers
     public static void setRoot(Node root) {
         rootNode = root;
         rootNode.setRoot(true);
@@ -144,8 +143,8 @@ public class BPlusTree {
         }
     }
 
-    // ex5 boolean ensures we delete everything less than key also
-    public ArrayList<Address> deleteNode(Node node, InternalNode parent, int parentPointerIndex, int parentKeyIndex,
+    // recursive function to delete key from all relevant nodes
+    public ArrayList<Address> deleteKeyRecursive(Node node, InternalNode parent, int parentPointerIndex, int parentKeyIndex,
             Float key, Float lowerbound) {
         // System.out.printf("GET FIRST KEY %.3f\n", node.getFirstKey());
         ArrayList<Address> addressesToDel = new ArrayList<>();
@@ -182,7 +181,7 @@ public class BPlusTree {
             int keyIdx = ptrIdx - 1;
             // read the next level node
             Node next = nonLeafNode.getChild(ptrIdx);
-            addressesToDel = deleteNode(next, nonLeafNode, ptrIdx, keyIdx, key, lowerbound);
+            addressesToDel = deleteKeyRecursive(next, nonLeafNode, ptrIdx, keyIdx, key, lowerbound);
         }
 
         if (node.isUnderUtilized(NODE_SIZE)) {
