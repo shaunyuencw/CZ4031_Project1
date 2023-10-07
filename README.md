@@ -96,35 +96,9 @@ The indexing component is anchored by the B+ tree structure.
     
 -   **Deletion**: Encompasses borrowing of keys and merging of leaves. Various methods are invoked when deleting a single key.
 
-## Group Members & Contributions
+## Group Members
 
 ### Darryl (@ddaarrrryyll)
-- **Primary Role**: Lead Developer
-- **Contributions**: 
-  - Designed the core architecture of the database management system.
-  - Led the team in various coding sessions.
-  - Collaborated with Shaun on optimizing the indexing component.
-  - Code review and testing.
-
 ### Shaun Yuen (@shaunyuencw)
-- **Primary Role**: Indexing Specialist
-- **Contributions**: 
-  - Oversaw the implementation of the B+ tree structure.
-  - Worked with Darryl to optimize data retrieval times.
-  - Developed the algorithms for efficient data insertion and deletion.
-  - Contributed to the documentation on the indexing component.
-
 ### Jie Chung Ong (@burntpie)
-- **Primary Role**: Storage Architect
-- **Contributions**:
-  - Designed and implemented the storage component.
-  - Developed the `Block.java` and `Address.java` classes.
-  - Managed data storage and retrieval.
-  - Assisted Abhishekh in data analysis for experiments.
-
 ### Abhishekh Pandey (@AbhishekhPandeyVats)
-- **Primary Role**: Data Analyst & Documenter
-- **Contributions**: 
-  - Handled the analysis of data for experiments.
-  - Worked with Jie Chung on integrating the storage component with the B+ tree.
-  - Responsible for writing and compiling the group's report.
